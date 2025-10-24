@@ -27,15 +27,22 @@ def insertar_ubicacion(nombre, descripcion):
     cnx = cur = None
     try:
         cnx = conectar()
-        if cnx is None: return
+        if cnx is None: 
+            return
         cur = cnx.cursor()
-        args = [nombre, descripcion, 0]  # OUT p_nuevo_id
+
+        # 🔹 Llamada correcta al SP con parámetro OUT inicializado
+        args = [nombre, descripcion, 0]  # <-- 0 es valor inicial para OUT
         cur.callproc("sp_insertar_ubicacion", args)
         cnx.commit()
+
+        # 🔹 Obtenemos el ID generado del OUT
         nuevo_id = args[2]
-        print(f"✅ Ubicación insertada correctamente. ID: {nuevo_id}")
+        print(f"✅ Ubicación insertada correctamente. Nuevo ID: {nuevo_id}")
+
     except mysql.connector.Error as e:
-        print("❌ Error al insertar ubicación:", e)
+        print(f"❌ Error al insertar ubicación: {e}")
+
     finally:
         if cur: cur.close()
         if cnx and cnx.is_connected(): cnx.close()
