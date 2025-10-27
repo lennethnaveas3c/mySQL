@@ -1098,6 +1098,11 @@ DELIMITER ;
 
 
 
+
+
+
+
+
 -- DROP PROCEDURES EXISTENTES
 DROP PROCEDURE IF EXISTS sp_insertar_historial_equipo;
 DROP PROCEDURE IF EXISTS sp_listar_historial_activos;
@@ -1106,322 +1111,16 @@ DROP PROCEDURE IF EXISTS sp_actualizar_historial;
 DROP PROCEDURE IF EXISTS sp_borrado_logico_historial;
 DROP PROCEDURE IF EXISTS sp_restaurar_historial;
 
-DELIMITER $$
 
--- INSERTAR HISTORIAL
-CREATE PROCEDURE sp_insertar_historial_equipo(
-    IN p_fecha DATE,
-    IN p_descripcion VARCHAR(200),
-    IN p_usuario_id INT,
-    IN p_equipo_id INT,
-    OUT p_nuevo_id INT
-)
-BEGIN
-    -- Validar usuario
-    IF NOT EXISTS (SELECT 1 FROM usuario WHERE id_usuario = p_usuario_id) THEN
-        SET p_nuevo_id = -1;
-        LEAVE BEGIN;
-    END IF;
 
-    -- Validar equipo
-    IF NOT EXISTS (SELECT 1 FROM equipo WHERE id_equipo = p_equipo_id) THEN
-        SET p_nuevo_id = -2;
-        LEAVE BEGIN;
-    END IF;
 
-    INSERT INTO historial_equipo(fecha_accion, descripcion_accion, usuario_id_usuario, equipo_id_equipo)
-    VALUES (p_fecha, p_descripcion, p_usuario_id, p_equipo_id);
 
-    SET p_nuevo_id = LAST_INSERT_ID();
-END$$
 
--- LISTAR HISTORIAL ACTIVOS
-CREATE PROCEDURE sp_listar_historial_activos()
-BEGIN
-    SELECT h.id_historial_equipo, h.fecha_accion, h.descripcion_accion,
-           u.nombre AS usuario, e.nombre AS equipo,
-           h.created_at, h.updated_at
-    FROM historial_equipo h
-    JOIN usuario u ON h.usuario_id_usuario = u.id_usuario
-    JOIN equipo e ON h.equipo_id_equipo = e.id_equipo
-    WHERE h.deleted = 0;
-END$$
 
--- LISTAR TODOS LOS HISTORIALES
-CREATE PROCEDURE sp_listar_historial_todos()
-BEGIN
-    SELECT h.id_historial_equipo, h.fecha_accion, h.descripcion_accion,
-           u.nombre AS usuario, e.nombre AS equipo,
-           h.created_at, h.updated_at, h.deleted
-    FROM historial_equipo h
-    JOIN usuario u ON h.usuario_id_usuario = u.id_usuario
-    JOIN equipo e ON h.equipo_id_equipo = e.id_equipo;
-END$$
 
--- ACTUALIZAR HISTORIAL
-CREATE PROCEDURE sp_actualizar_historial(
-    IN p_id INT,
-    IN p_fecha DATE,
-    IN p_descripcion VARCHAR(200),
-    IN p_usuario_id INT,
-    IN p_equipo_id INT
-)
-BEGIN
-    UPDATE historial_equipo
-    SET fecha_accion = p_fecha,
-        descripcion_accion = p_descripcion,
-        usuario_id_usuario = p_usuario_id,
-        equipo_id_equipo = p_equipo_id,
-        updated_at = CURRENT_TIMESTAMP
-    WHERE id_historial_equipo = p_id;
-END$$
 
--- BORRADO LÓGICO
-CREATE PROCEDURE sp_borrado_logico_historial(IN p_id INT)
-BEGIN
-    UPDATE historial_equipo SET deleted = 1 WHERE id_historial_equipo = p_id;
-END$$
 
--- RESTAURAR HISTORIAL
-CREATE PROCEDURE sp_restaurar_historial(IN p_id INT)
-BEGIN
-    UPDATE historial_equipo SET deleted = 0 WHERE id_historial_equipo = p_id;
-END$$
-
-DELIMITER ;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-DELIMITER $$
-
-DROP PROCEDURE IF EXISTS sp_insertar_historial_equipo$$
-
-CREATE PROCEDURE sp_insertar_historial_equipo(
-    IN p_fecha DATE,
-    IN p_descripcion VARCHAR(200),
-    IN p_usuario_id INT,
-    IN p_equipo_id INT,
-    OUT p_nuevo_id INT
-)
-BEGIN
-    -- Inicializar
-    SET p_nuevo_id = 0;
-
-    -- Validar usuario
-    IF NOT EXISTS (SELECT 1 FROM usuario WHERE id_usuario = p_usuario_id) THEN
-        SET p_nuevo_id = -1;
-    -- Validar equipo
-    ELSEIF NOT EXISTS (SELECT 1 FROM equipo WHERE id_equipo = p_equipo_id) THEN
-        SET p_nuevo_id = -2;
-    ELSE
-        INSERT INTO historial_equipo(fecha_accion, descripcion_accion, usuario_id_usuario, equipo_id_equipo)
-        VALUES (p_fecha, p_descripcion, p_usuario_id, p_equipo_id);
-
-        SET p_nuevo_id = LAST_INSERT_ID();
-    END IF;
-END$$
-
-DELIMITER ;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-DELIMITER $$
-
-DROP PROCEDURE IF EXISTS sp_insertar_historial_equipo$$
-
-CREATE PROCEDURE sp_insertar_historial_equipo(
-    IN p_fecha DATE,
-    IN p_descripcion VARCHAR(200),
-    IN p_usuario_id INT,
-    IN p_equipo_id INT,
-    OUT p_nuevo_id INT
-)
-BEGIN
-    -- Inicializar
-    SET p_nuevo_id = 0;
-
-    -- Validar usuario
-    IF NOT EXISTS (SELECT 1 FROM usuario WHERE id_usuario = p_usuario_id) THEN
-        SET p_nuevo_id = -1;
-    -- Validar equipo
-    ELSEIF NOT EXISTS (SELECT 1 FROM equipo WHERE id_equipo = p_equipo_id) THEN
-        SET p_nuevo_id = -2;
-    ELSE
-        INSERT INTO historial_equipo(fecha_accion, descripcion_accion, usuario_id_usuario, equipo_id_equipo)
-        VALUES (p_fecha, p_descripcion, p_usuario_id, p_equipo_id);
-
-        SET p_nuevo_id = LAST_INSERT_ID();
-    END IF;
-END$$
-
-DELIMITER ;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-USE proyecto;
-
--- ===========================================================
--- TABLA: historial_equipo
--- ===========================================================
-CREATE TABLE IF NOT EXISTS historial_equipo (
-  id_historial_equipo INT AUTO_INCREMENT PRIMARY KEY,
-  fecha_accion DATE NOT NULL,
-  descripcion_accion VARCHAR(200) NOT NULL,
-  usuario_id_usuario INT NOT NULL,
-  equipo_id_equipo INT NOT NULL,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  deleted TINYINT(1) DEFAULT 0,
-  CONSTRAINT fk_historial_usuario FOREIGN KEY (usuario_id_usuario) REFERENCES usuario(id_usuario),
-  CONSTRAINT fk_historial_equipo FOREIGN KEY (equipo_id_equipo) REFERENCES equipo(id_equipo)
-) ENGINE=InnoDB;
-
--- ===========================================================
--- 1️⃣ INSERTAR HISTORIAL
--- ===========================================================
-DELIMITER //
-CREATE PROCEDURE sp_insertar_historial_equipo(
-    IN p_fecha DATE,
-    IN p_descripcion VARCHAR(200),
-    IN p_usuario_id INT,
-    IN p_equipo_id INT,
-    OUT p_nuevo_id INT
-)
-BEGIN
-    -- Validar usuario
-    IF NOT EXISTS (SELECT 1 FROM usuario WHERE id_usuario = p_usuario_id) THEN
-        SET p_nuevo_id = -1;
-    -- Validar equipo
-    ELSEIF NOT EXISTS (SELECT 1 FROM equipo WHERE id_equipo = p_equipo_id) THEN
-        SET p_nuevo_id = -2;
-    ELSE
-        INSERT INTO historial_equipo(fecha_accion, descripcion_accion, usuario_id_usuario, equipo_id_equipo)
-        VALUES (p_fecha, p_descripcion, p_usuario_id, p_equipo_id);
-        SET p_nuevo_id = LAST_INSERT_ID();
-    END IF;
-END //
-DELIMITER ;
-
--- ===========================================================
--- 2️⃣ LISTAR HISTORIALES ACTIVOS
--- ===========================================================
-DELIMITER //
-CREATE PROCEDURE sp_listar_historial_activos()
-BEGIN
-    SELECT h.id_historial_equipo, h.fecha_accion, h.descripcion_accion,
-           u.nombre_usuario AS usuario, e.nombre_equipo AS equipo,
-           h.created_at, h.updated_at
-    FROM historial_equipo h
-    JOIN usuario u ON u.id_usuario = h.usuario_id_usuario
-    JOIN equipo e ON e.id_equipo = h.equipo_id_equipo
-    WHERE h.deleted = 0;
-END //
-DELIMITER ;
-
--- ===========================================================
--- 3️⃣ LISTAR TODOS LOS HISTORIALES
--- ===========================================================
-DELIMITER //
-CREATE PROCEDURE sp_listar_historial_todos()
-BEGIN
-    SELECT h.id_historial_equipo, h.fecha_accion, h.descripcion_accion,
-           u.nombre_usuario AS usuario, e.nombre_equipo AS equipo,
-           h.deleted, h.created_at, h.updated_at
-    FROM historial_equipo h
-    JOIN usuario u ON u.id_usuario = h.usuario_id_usuario
-    JOIN equipo e ON e.id_equipo = h.equipo_id_equipo;
-END //
-DELIMITER ;
-
--- ===========================================================
--- 4️⃣ ACTUALIZAR HISTORIAL
--- ===========================================================
-DELIMITER //
-CREATE PROCEDURE sp_actualizar_historial_equipo(
-    IN p_id INT,
-    IN p_fecha DATE,
-    IN p_descripcion VARCHAR(200),
-    IN p_usuario_id INT,
-    IN p_equipo_id INT
-)
-BEGIN
-    UPDATE historial_equipo
-    SET fecha_accion = p_fecha,
-        descripcion_accion = p_descripcion,
-        usuario_id_usuario = p_usuario_id,
-        equipo_id_equipo = p_equipo_id
-    WHERE id_historial_equipo = p_id;
-END //
-DELIMITER ;
-
--- ===========================================================
--- 5️⃣ BORRADO LÓGICO
--- ===========================================================
-DELIMITER //
-CREATE PROCEDURE sp_borrado_logico_historial_equipo(IN p_id INT)
-BEGIN
-    UPDATE historial_equipo SET deleted = 1 WHERE id_historial_equipo = p_id;
-END //
-DELIMITER ;
-
--- ===========================================================
--- 6️⃣ RESTAURAR HISTORIAL ELIMINADO
--- ===========================================================
-DELIMITER //
-CREATE PROCEDURE sp_restaurar_historial_equipo(IN p_id INT)
-BEGIN
-    UPDATE historial_equipo SET deleted = 0 WHERE id_historial_equipo = p_id;
-END //
-DELIMITER ;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# ehhhhhhhhh lo guardo en caso de
 DROP PROCEDURE IF EXISTS sp_insertar_historial_equipo;
 
 DELIMITER //
@@ -1460,24 +1159,29 @@ DELIMITER ;
 
 
 
-DROP PROCEDURE IF EXISTS sp_listar_historial_activos;
 
+# este si funciono
+USE proyecto;
+DROP PROCEDURE IF EXISTS sp_insertar_historial_equipo;
 DELIMITER //
-CREATE PROCEDURE sp_listar_historial_activos()
+CREATE PROCEDURE sp_insertar_historial_equipo(
+    IN p_fecha DATE,
+    IN p_descripcion VARCHAR(200),
+    IN p_usuario_id INT,
+    IN p_equipo_id INT,
+    OUT p_nuevo_id INT
+)
 BEGIN
-    SELECT 
-        h.id_historial_equipo,
-        h.fecha_accion,
-        h.descripcion_accion,
-        u.nombre AS nombre_usuario,
-        e.nombre AS nombre_equipo,
-        h.created_at,
-        h.updated_at
-    FROM historial_equipo h
-    JOIN usuario u ON h.usuario_id_usuario = u.id_usuario
-    JOIN equipo e ON h.equipo_id_equipo = e.id_equipo
-    WHERE h.deleted = 0;
-END //
+    -- Validar usuario
+    IF NOT EXISTS (SELECT 1 FROM usuario WHERE id_usuario = p_usuario_id) THEN
+        SET p_nuevo_id = -1;
+    -- Validar equipo
+    ELSEIF NOT EXISTS (SELECT 1 FROM equipo WHERE id_equipo = p_equipo_id) THEN
+        SET p_nuevo_id = -2;
+    ELSE
+        INSERT INTO historial_equipo(fecha_accion, descripcion_accion, usuario_id_usuario, equipo_id_equipo)
+        VALUES (p_fecha, p_descripcion, p_usuario_id, p_equipo_id);
+        SET p_nuevo_id = LAST_INSERT_ID();
+    END IF;
+END//
 DELIMITER ;
-
-
